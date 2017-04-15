@@ -27,7 +27,7 @@ public:
   }
   inline uint32_t RawGet(data_size_t idx) override;
   inline uint32_t Get(data_size_t idx) override;
-  inline void Reset(data_size_t) override { }
+  inline void Reset(data_size_t) override {}
 private:
   const DenseBin<VAL_T>* bin_data_;
   VAL_T min_bin_;
@@ -64,7 +64,7 @@ public:
   BinIterator* GetIterator(uint32_t min_bin, uint32_t max_bin, uint32_t default_bin) const override;
 
   void ConstructHistogram(const data_size_t* data_indices, data_size_t num_data,
-                          const GradHessPair* gpair, int num_bin,
+                          const GradHessPair* ordered_gpair, int num_bin,
                           HistogramBinEntry* out) const override {
     const data_size_t group_rest = num_data & KNumSumupGroupMask;
     const data_size_t rest = num_data & 0x7;
@@ -83,7 +83,7 @@ public:
         const VAL_T bin7 = data_[data_indices[i + 7]];
 
         AddPairPtrToHistogram(tmp_sumup_buf, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
-                              gpair + i);
+                              ordered_gpair + i);
         AddCountToArray(tmp_cnts, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
       }
       for (int j = 0; j < num_bin; ++j) {
@@ -104,19 +104,19 @@ public:
       const VAL_T bin7 = data_[data_indices[i + 7]];
 
       AddPairPtrToHistogram(out, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
-                            gpair + i);
+                            ordered_gpair + i);
       AddCountToHistogram(out, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
     }
     for (; i < num_data; ++i) {
       const VAL_T bin = data_[data_indices[i]];
-      out[bin].sum_gradients += gpair[i].grad;
-      out[bin].sum_hessians += gpair[i].hess;
+      out[bin].sum_gradients += ordered_gpair[i].grad;
+      out[bin].sum_hessians += ordered_gpair[i].hess;
       ++out[bin].cnt;
     }
   }
 
   void ConstructHistogram(data_size_t num_data,
-                          const GradHessPair* gpair, int num_bin,
+                          const GradHessPair* ordered_gpair, int num_bin,
                           HistogramBinEntry* out) const override {
     const data_size_t group_rest = num_data & KNumSumupGroupMask;
     const data_size_t rest = num_data & 0x7;
@@ -135,7 +135,7 @@ public:
         const VAL_T bin7 = data_[i + 7];
 
         AddPairPtrToHistogram(tmp_sumup_buf, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
-                                  gpair + i);
+                              ordered_gpair + i);
         AddCountToArray(tmp_cnts, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
       }
       for (int j = 0; j < num_bin; ++j) {
@@ -156,13 +156,13 @@ public:
       const VAL_T bin7 = data_[i + 7];
 
       AddPairPtrToHistogram(out, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
-                            gpair + i);
+                            ordered_gpair + i);
       AddCountToHistogram(out, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
     }
     for (; i < num_data; ++i) {
       const VAL_T bin = data_[i];
-      out[bin].sum_gradients += gpair[i].grad;
-      out[bin].sum_hessians += gpair[i].hess;
+      out[bin].sum_gradients += ordered_gpair[i].grad;
+      out[bin].sum_hessians += ordered_gpair[i].hess;
       ++out[bin].cnt;
     }
   }

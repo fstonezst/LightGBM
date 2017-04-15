@@ -42,12 +42,12 @@ public:
   * \param is_constant_hessian True if all hessians share the same value
   * \return A trained tree
   */
-  virtual Tree* Train(const GradHessPair* grad, bool is_constant_hessian) = 0;
+  virtual Tree* Train(const GradHessPair* gpair, bool is_constant_hessian) = 0;
 
   /*!
   * \brief use a existing tree to fit the new gradients and hessians.
   */
-  virtual Tree* FitByExistingTree(const Tree* old_tree, const GradHessPair* grad) const = 0;
+  virtual Tree* FitByExistingTree(const Tree* old_tree, const GradHessPair* gpair) const = 0;
 
   /*!
   * \brief Set bagging data

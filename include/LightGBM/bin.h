@@ -219,7 +219,7 @@ public:
   *        Note: Unlike Bin, OrderedBin doesn't use ordered gradients and ordered hessians.
   *        Because it is hard to know the relative index in one leaf for sparse bin, since we skipped zero bins.
   * \param leaf Using which leaf's data to construct
-  * \param grad 
+  * \param gpair 
   * \param num_bin The number of bins
   * \param out Output Result
   */
@@ -313,17 +313,16 @@ public:
   *        Ordered_gradients[i] is aligned with data_indices[i]'s gradients (same for ordered_hessians).
   * \param data_indices Used data indices in current leaf
   * \param num_data Number of used data
-  * \param ordered_gradients Pointer to gradients, the data_indices[i]-th data's gradient is ordered_gradients[i]
-  * \param ordered_hessians Pointer to hessians, the data_indices[i]-th data's hessian is ordered_hessians[i]
+  * \param ordered_gpair
   * \param num_bin The number of bins
   * \param out Output Result
   */
   virtual void ConstructHistogram(const data_size_t* data_indices, data_size_t num_data,
-                                  const GradHessPair* gpair, int num_bin,
+                                  const GradHessPair* ordered_gpair, int num_bin,
                                   HistogramBinEntry* out) const = 0;
 
   virtual void ConstructHistogram(data_size_t num_data,
-                                  const GradHessPair* gpair, int num_bin,
+                                  const GradHessPair* ordered_gpair, int num_bin,
                                   HistogramBinEntry* out) const = 0;
 
   /*!
