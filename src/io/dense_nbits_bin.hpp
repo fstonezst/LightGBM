@@ -84,7 +84,7 @@ public:
     const data_size_t rest = num_data & 0x7;
     data_size_t i = 0;
     for (; i < num_data - group_rest;) {
-      std::vector<HistogramBinEntry> tmp_sumup_buf(num_bin);
+      std::vector<TmpGradHessPair> tmp_sumup_buf(num_bin);
       for (data_size_t k = 0; k < KNumSumupGroup; k += 8, i += 8) {
         data_size_t idx = data_indices[i];
         const auto bin0 = (data_[idx >> 1] >> ((idx & 1) << 2)) & 0xf;
@@ -115,12 +115,11 @@ public:
                                   ordered_gradients + i);
         AddHessianPtrToHistogram(tmp_sumup_buf.data(), bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
                                  ordered_hessians + i);
-        AddCountToHistogram(tmp_sumup_buf.data(), bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
+        AddCountToHistogram(out, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
       }
       for (int j = 0; j < num_bin; ++j) {
         out[j].sum_gradients += tmp_sumup_buf[j].sum_gradients;
         out[j].sum_hessians += tmp_sumup_buf[j].sum_hessians;
-        out[j].cnt += tmp_sumup_buf[j].cnt;
       }
     }
     for (; i < num_data - rest; i += 8) {
@@ -174,7 +173,7 @@ public:
     const data_size_t rest = num_data & 0x7;
     data_size_t i = 0;
     for (; i < num_data - group_rest;) {
-      std::vector<HistogramBinEntry> tmp_sumup_buf(num_bin);
+      std::vector<TmpGradHessPair> tmp_sumup_buf(num_bin);
       for (data_size_t k = 0; k < KNumSumupGroup; k += 8, i += 8) {
         int j = i >> 1;
         const auto bin0 = (data_[j]) & 0xf;
@@ -194,12 +193,11 @@ public:
                                   ordered_gradients + i);
         AddHessianPtrToHistogram(tmp_sumup_buf.data(), bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
                                  ordered_hessians + i);
-        AddCountToHistogram(tmp_sumup_buf.data(), bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
+        AddCountToHistogram(out, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
       }
       for (int j = 0; j < num_bin; ++j) {
         out[j].sum_gradients += tmp_sumup_buf[j].sum_gradients;
         out[j].sum_hessians += tmp_sumup_buf[j].sum_hessians;
-        out[j].cnt += tmp_sumup_buf[j].cnt;
       }
     }
     for (; i < num_data - rest; i += 8) {

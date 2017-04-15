@@ -508,6 +508,12 @@ public:
   data_size_t cnt = 0;
 };
 
+struct TmpGradHessPair {
+public:
+  float sum_gradients = 0.0f;
+  float sum_hessians = 0.0f;
+};
+
 #define KNumSumupGroup (65536)
 #define KNumSumupGroupMask (65535)
 
