@@ -81,7 +81,7 @@ public:
     for (data_size_t i = 0; i < cnt; ++i) {
       for (int cur_tree_id = 0; cur_tree_id < num_tree_per_iteration_; ++cur_tree_id) {
         size_t idx = static_cast<size_t>(cur_tree_id) * num_gradients_per_class_ + start + i;
-        tmp_gradients[i] += std::fabs(gradients_[idx] * hessians_[idx]);
+        tmp_gradients[i] += std::fabs(gpair_[idx].grad * gpair_[idx].hess);
       }
     }
     data_size_t top_k = static_cast<data_size_t>(cnt * gbdt_config_->top_rate);
@@ -98,7 +98,7 @@ public:
       float grad = 0.0f;
       for (int cur_tree_id = 0; cur_tree_id < num_tree_per_iteration_; ++cur_tree_id) {
         size_t idx = static_cast<size_t>(cur_tree_id) * num_gradients_per_class_ + start + i;
-        grad += std::fabs(gradients_[idx] * hessians_[idx]);
+        grad += std::fabs(gpair_[idx].grad * gpair_[idx].hess);
       }
       if (grad >= threshold) {
         buffer[cur_left_cnt++] = start + i;
@@ -112,8 +112,8 @@ public:
           buffer[cur_left_cnt++] = start + i;
           for (int cur_tree_id = 0; cur_tree_id < num_tree_per_iteration_; ++cur_tree_id) {
             size_t idx = static_cast<size_t>(cur_tree_id) * num_gradients_per_class_ + start + i;
-            gradients_[idx] *= multiply;
-            hessians_[idx] *= multiply;
+            gpair_[idx].grad *= multiply;
+            gpair_[idx].hess *= multiply;
           }
         } else {
           buffer_right[cur_right_cnt++] = start + i;

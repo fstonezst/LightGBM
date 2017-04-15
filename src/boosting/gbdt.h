@@ -302,9 +302,7 @@ protected:
   /*! \brief Max feature index of training data*/
   int max_feature_idx_;
   /*! \brief First order derivative of training data */
-  std::vector<float, aligned_allocator<float, 32>> gradients_;
-  /*! \brief Secend order derivative of training data */
-  std::vector<float, aligned_allocator<float, 32>> hessians_;
+  std::vector<GradHessPair, aligned_allocator<GradHessPair, 32>> gpair_;
   /*! \brief Store the indices of in-bag data */
   std::vector<data_size_t> bag_data_indices_;
   /*! \brief Number of in-bag data */

@@ -71,16 +71,14 @@ public:
     ConstructSigmoidTable();
   }
 
-  void GetGradients(const double* score, float* gradients,
-                    float* hessians) const override {
+  void GetGradients(const double* score, GradHessPair* gpair) const override {
     #pragma omp parallel for schedule(guided)
     for (data_size_t i = 0; i < num_queries_; ++i) {
-      GetGradientsForOneQuery(score, gradients, hessians, i);
+      GetGradientsForOneQuery(score, gpair, i);
     }
   }
 
-  inline void GetGradientsForOneQuery(const double* score,
-              float* lambdas, float* hessians, data_size_t query_id) const {
+  inline void GetGradientsForOneQuery(const double* score, GradHessPair* gpair, data_size_t query_id) const {
     // get doc boundary for current query
     const data_size_t start = query_boundaries_[query_id];
     const data_size_t cnt =
@@ -90,12 +88,11 @@ public:
     // add pointers with offset
     const float* label = label_ + start;
     score += start;
-    lambdas += start;
-    hessians += start;
+    gpair += start;
     // initialize with zero
     for (data_size_t i = 0; i < cnt; ++i) {
-      lambdas[i] = 0.0f;
-      hessians[i] = 0.0f;
+      gpair[i].grad = 0.0f;
+      gpair[i].hess = 0.0f;
     }
     // get sorted indices for scores
     std::vector<data_size_t> sorted_idx;
@@ -153,18 +150,18 @@ public:
         p_hessian *= 2 * delta_pair_NDCG;
         high_sum_lambda += p_lambda;
         high_sum_hessian += p_hessian;
-        lambdas[low] -= static_cast<float>(p_lambda);
-        hessians[low] += static_cast<float>(p_hessian);
+        gpair[low].grad -= static_cast<float>(p_lambda);
+        gpair[low].hess += static_cast<float>(p_hessian);
       }
       // update
-      lambdas[high] += static_cast<float>(high_sum_lambda);
-      hessians[high] += static_cast<float>(high_sum_hessian);
+      gpair[high].grad += static_cast<float>(high_sum_lambda);
+      gpair[high].hess += static_cast<float>(high_sum_hessian);
     }
     // if need weights
     if (weights_ != nullptr) {
       for (data_size_t i = 0; i < cnt; ++i) {
-        lambdas[i] *= weights_[start + i];
-        hessians[i] *= weights_[start + i];
+        gpair[i].grad *= weights_[start + i];
+        gpair[i].hess *= weights_[start + i];
       }
     }
   }

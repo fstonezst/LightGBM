@@ -393,8 +393,8 @@ public:
                            const data_size_t* data_indices, data_size_t num_data,
                            int leaf_idx,
                            std::vector<std::unique_ptr<OrderedBin>>& ordered_bins,
-                           const float* gradients, const float* hessians,
-                           float* ordered_gradients, float* ordered_hessians,
+                           const GradHessPair* gpair,
+                           GradHessPair* ordered_gpair,
                            bool is_constant_hessian,
                            HistogramBinEntry* histogram_data) const;
 

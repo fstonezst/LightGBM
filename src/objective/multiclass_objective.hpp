@@ -66,7 +66,7 @@ public:
     hessian_nor_ = static_cast<float>(non_empty_class) / (non_empty_class - 1);
   }
 
-  void GetGradients(const double* score, float* gradients, float* hessians) const override {
+  void GetGradients(const double* score, GradHessPair* gpair) const override {
     if (weights_ == nullptr) {
       std::vector<double> rec;
       #pragma omp parallel for schedule(static) private(rec)
@@ -83,11 +83,11 @@ public:
           size_t gidx = static_cast<size_t>(num_gradients_per_class_) * k + i;
           size_t idx = static_cast<size_t>(num_data_) * k + i;
           if (label_int_[i] == k) {
-            gradients[gidx] = static_cast<float>(p - 1.0f + softmax_weight_decay_ * score[idx]);
+            gpair[gidx].grad = static_cast<float>(p - 1.0f + softmax_weight_decay_ * score[idx]);
           } else {
-            gradients[gidx] = static_cast<float>(p + softmax_weight_decay_ * score[idx]);
+            gpair[gidx].grad = static_cast<float>(p + softmax_weight_decay_ * score[idx]);
           }
-          hessians[gidx] = static_cast<float>(hessian_nor_ * p * (1.0f - p) + softmax_weight_decay_);
+          gpair[gidx].hess = static_cast<float>(hessian_nor_ * p * (1.0f - p) + softmax_weight_decay_);
         }
       }
     } else {
@@ -106,11 +106,11 @@ public:
           size_t gidx = static_cast<size_t>(num_gradients_per_class_) * k + i;
           size_t idx = static_cast<size_t>(num_data_) * k + i;
           if (label_int_[i] == k) {
-            gradients[gidx] = static_cast<float>((p - 1.0f + softmax_weight_decay_ * score[idx]) * weights_[i]);
+            gpair[gidx].grad = static_cast<float>((p - 1.0f + softmax_weight_decay_ * score[idx]) * weights_[i]);
           } else {
-            gradients[gidx] = static_cast<float>((p + softmax_weight_decay_ * score[idx]) * weights_[i]);
+            gpair[gidx].grad = static_cast<float>((p + softmax_weight_decay_ * score[idx]) * weights_[i]);
           }
-          hessians[gidx] = static_cast<float>((hessian_nor_ * p * (1.0f - p) + softmax_weight_decay_)* weights_[i]);
+          gpair[gidx].hess = static_cast<float>((hessian_nor_ * p * (1.0f - p) + softmax_weight_decay_)* weights_[i]);
         }
       }
     }
@@ -201,11 +201,11 @@ public:
     }
   }
 
-  void GetGradients(const double* score, float* gradients, float* hessians) const override {
+  void GetGradients(const double* score, GradHessPair* gpair) const override {
     for (int i = 0; i < num_class_; ++i) {
       size_t bias = static_cast<size_t>(num_data_) * i;
       size_t gbias = static_cast<size_t>(num_gradients_per_class_) * i;
-      binary_loss_[i]->GetGradients(score + bias, gradients + gbias, hessians + gbias);
+      binary_loss_[i]->GetGradients(score + bias, gpair + gbias);
     }
   }
 

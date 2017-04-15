@@ -79,8 +79,7 @@ void SerialTreeLearner::Init(const Dataset* train_data, bool is_constant_hessian
   data_partition_.reset(new DataPartition(num_data_, tree_config_->num_leaves));
   is_feature_used_.resize(num_features_);
   // initialize ordered gradients and hessians
-  ordered_gradients_.resize(num_data_);
-  ordered_hessians_.resize(num_data_);
+  ordered_gpair_.resize(num_data_);
   // if has ordered bin, need to allocate a buffer to fast split
   if (has_ordered_bin_) {
     is_data_in_leaf_.resize(num_data_);
@@ -121,8 +120,7 @@ void SerialTreeLearner::ResetTrainingData(const Dataset* train_data) {
   is_feature_used_.resize(num_features_);
 
   // initialize ordered gradients and hessians
-  ordered_gradients_.resize(num_data_);
-  ordered_hessians_.resize(num_data_);
+  ordered_gpair_.resize(num_data_);
   // if has ordered bin, need to allocate a buffer to fast split
   if (has_ordered_bin_) {
     is_data_in_leaf_.resize(num_data_);
@@ -165,9 +163,8 @@ void SerialTreeLearner::ResetConfig(const TreeConfig* tree_config) {
   histogram_pool_.ResetConfig(tree_config_);
 }
 
-Tree* SerialTreeLearner::Train(const float* gradients, const float *hessians, bool is_constant_hessian) {
-  gradients_ = gradients;
-  hessians_ = hessians;
+Tree* SerialTreeLearner::Train(const GradHessPair* gpair, bool is_constant_hessian) {
+  gradients_ = gpair;
   is_constant_hessian_ = is_constant_hessian;
   #ifdef TIMETAG
   auto start_time = std::chrono::steady_clock::now();
@@ -222,7 +219,7 @@ Tree* SerialTreeLearner::Train(const float* gradients, const float *hessians, bo
   return tree.release();
 }
 
-Tree* SerialTreeLearner::FitByExistingTree(const Tree* old_tree, const float* gradients, const float *hessians) const {
+Tree* SerialTreeLearner::FitByExistingTree(const Tree* old_tree, const GradHessPair* gpair) const {
   auto tree = std::unique_ptr<Tree>(new Tree(*old_tree));
   CHECK(data_partition_->num_leaves() >= tree->num_leaves());
   OMP_INIT_EX();
@@ -235,8 +232,8 @@ Tree* SerialTreeLearner::FitByExistingTree(const Tree* old_tree, const float* gr
     double sum_hess = 0.0f;
     for (data_size_t j = 0; j < cnt_leaf_data; ++j) {
       auto idx = tmp_idx[j];
-      sum_grad += gradients[idx];
-      sum_hess += hessians[idx];
+      sum_grad += gpair[idx].grad;
+      sum_hess += gpair[idx].hess;
     }
     // avoid zero hessians.
     if (sum_hess <= 0) sum_hess = kEpsilon;
@@ -285,11 +282,11 @@ void SerialTreeLearner::BeforeTrain() {
   // Sumup for root
   if (data_partition_->leaf_count(0) == num_data_) {
     // use all data
-    smaller_leaf_splits_->Init(gradients_, hessians_);
+    smaller_leaf_splits_->Init(gradients_);
 
   } else {
     // use bagging, only use part of data
-    smaller_leaf_splits_->Init(0, data_partition_.get(), gradients_, hessians_);
+    smaller_leaf_splits_->Init(0, data_partition_.get(), gradients_);
   }
 
   larger_leaf_splits_->Init();
@@ -430,8 +427,8 @@ void SerialTreeLearner::ConstructHistograms(const std::vector<int8_t>& is_featur
   train_data_->ConstructHistograms(is_feature_used,
                                    smaller_leaf_splits_->data_indices(), smaller_leaf_splits_->num_data_in_leaf(),
                                    smaller_leaf_splits_->LeafIndex(),
-                                   ordered_bins_, gradients_, hessians_,
-                                   ordered_gradients_.data(), ordered_hessians_.data(), is_constant_hessian_,
+                                   ordered_bins_, gradients_,
+                                   ordered_gpair_.data(), is_constant_hessian_,
                                    ptr_smaller_leaf_hist_data);
 
   if (larger_leaf_histogram_array_ != nullptr && !use_subtract) {
@@ -440,8 +437,8 @@ void SerialTreeLearner::ConstructHistograms(const std::vector<int8_t>& is_featur
     train_data_->ConstructHistograms(is_feature_used,
                                      larger_leaf_splits_->data_indices(), larger_leaf_splits_->num_data_in_leaf(),
                                      larger_leaf_splits_->LeafIndex(),
-                                     ordered_bins_, gradients_, hessians_,
-                                     ordered_gradients_.data(), ordered_hessians_.data(), is_constant_hessian_,
+                                     ordered_bins_, gradients_,
+                                     ordered_gpair_.data(), is_constant_hessian_,
                                      ptr_larger_leaf_hist_data);
   }
 #ifdef TIMETAG

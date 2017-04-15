@@ -41,9 +41,9 @@ public:
 
   void ResetConfig(const TreeConfig* tree_config) override;
 
-  Tree* Train(const float* gradients, const float *hessians, bool is_constant_hessian) override;
+  Tree* Train(const GradHessPair* gpair, bool is_constant_hessian) override;
 
-  Tree* FitByExistingTree(const Tree* old_tree, const float* gradients, const float* hessians) const override;
+  Tree* FitByExistingTree(const Tree* old_tree, const GradHessPair* gpair) const override;
 
   void SetBaggingData(const data_size_t* used_indices, data_size_t num_data) override {
     data_partition_->SetUsedDataIndices(used_indices, num_data);
@@ -111,9 +111,7 @@ protected:
   /*! \brief training data */
   const Dataset* train_data_;
   /*! \brief gradients of current iteration */
-  const float* gradients_;
-  /*! \brief hessians of current iteration */
-  const float* hessians_;
+  const GradHessPair* gradients_;
   /*! \brief training data partition on leaves */
   std::unique_ptr<DataPartition> data_partition_;
   /*! \brief used for generate used features */
@@ -142,9 +140,7 @@ protected:
   std::vector<float, boost::alignment::aligned_allocator<float, 4096>> ordered_hessians_;
 #else
   /*! \brief gradients of current iteration, ordered for cache optimized */
-  std::vector<float, aligned_allocator<float, 32>> ordered_gradients_;
-  /*! \brief hessians of current iteration, ordered for cache optimized */
-  std::vector<float, aligned_allocator<float, 32>> ordered_hessians_;
+  std::vector<GradHessPair, aligned_allocator<float, 32>> ordered_gpair_;
 #endif
 
   /*! \brief Store ordered bin */

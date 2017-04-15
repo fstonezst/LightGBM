@@ -26,19 +26,18 @@ public:
     weights_ = metadata.weights();
   }
 
-  void GetGradients(const double* score, float* gradients,
-                    float* hessians) const override {
+  void GetGradients(const double* score, GradHessPair* gpair) const override {
     if (weights_ == nullptr) {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
-        gradients[i] = static_cast<float>(score[i] - label_[i]);
-        hessians[i] = 1.0f;
+        gpair[i].grad = static_cast<float>(score[i] - label_[i]);
+        gpair[i].hess = 1.0f;
       }
     } else {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
-        gradients[i] = static_cast<float>(score[i] - label_[i]) * weights_[i];
-        hessians[i] = weights_[i];
+        gpair[i].grad = static_cast<float>(score[i] - label_[i]) * weights_[i];
+        gpair[i].hess = weights_[i];
       }
     }
   }
@@ -93,29 +92,28 @@ public:
     weights_ = metadata.weights();
   }
 
-  void GetGradients(const double* score, float* gradients,
-                    float* hessians) const override {
+  void GetGradients(const double* score, GradHessPair* gpair) const override {
     if (weights_ == nullptr) {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
         const double diff = score[i] - label_[i];
         if (diff >= 0.0f) {
-          gradients[i] = 1.0f;
+          gpair[i].grad = 1.0f;
         } else {
-          gradients[i] = -1.0f;
+          gpair[i].grad = -1.0f;
         }
-        hessians[i] = static_cast<float>(Common::ApproximateHessianWithGaussian(score[i], label_[i], gradients[i], eta_));
+        gpair[i].hess = static_cast<float>(Common::ApproximateHessianWithGaussian(score[i], label_[i], gpair[i].grad, eta_));
       }
     } else {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
         const double diff = score[i] - label_[i];
         if (diff >= 0.0f) {
-          gradients[i] = weights_[i];
+          gpair[i].grad = weights_[i];
         } else {
-          gradients[i] = -weights_[i];
+          gpair[i].grad = -weights_[i];
         }
-        hessians[i] = static_cast<float>(Common::ApproximateHessianWithGaussian(score[i], label_[i], gradients[i], eta_, weights_[i]));
+        gpair[i].hess = static_cast<float>(Common::ApproximateHessianWithGaussian(score[i], label_[i], gpair[i].grad, eta_, weights_[i]));
       }
     }
   }
@@ -166,23 +164,22 @@ public:
     weights_ = metadata.weights();
   }
 
-  void GetGradients(const double* score, float* gradients,
-                    float* hessians) const override {
+  void GetGradients(const double* score, GradHessPair* gpair) const override {
     if (weights_ == nullptr) {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
         const double diff = score[i] - label_[i];
 
         if (std::abs(diff) <= delta_) {
-          gradients[i] = static_cast<float>(diff);
-          hessians[i] = 1.0f;
+          gpair[i].grad = static_cast<float>(diff);
+          gpair[i].hess = 1.0f;
         } else {
           if (diff >= 0.0f) {
-            gradients[i] = static_cast<float>(delta_);
+            gpair[i].grad = static_cast<float>(delta_);
           } else {
-            gradients[i] = static_cast<float>(-delta_);
+            gpair[i].grad = static_cast<float>(-delta_);
           }
-          hessians[i] = static_cast<float>(Common::ApproximateHessianWithGaussian(score[i], label_[i], gradients[i], eta_));
+          gpair[i].hess = static_cast<float>(Common::ApproximateHessianWithGaussian(score[i], label_[i], gpair[i].grad, eta_));
         }
       }
     } else {
@@ -191,15 +188,15 @@ public:
         const double diff = score[i] - label_[i];
 
         if (std::abs(diff) <= delta_) {
-          gradients[i] = static_cast<float>(diff * weights_[i]);
-          hessians[i] = weights_[i];
+          gpair[i].grad = static_cast<float>(diff * weights_[i]);
+          gpair[i].hess = weights_[i];
         } else {
           if (diff >= 0.0f) {
-            gradients[i] = static_cast<float>(delta_ * weights_[i]);
+            gpair[i].grad = static_cast<float>(delta_ * weights_[i]);
           } else {
-            gradients[i] = static_cast<float>(-delta_ * weights_[i]);
+            gpair[i].grad = static_cast<float>(-delta_ * weights_[i]);
           }
-          hessians[i] = static_cast<float>(Common::ApproximateHessianWithGaussian(score[i], label_[i], gradients[i], eta_, weights_[i]));
+          gpair[i].hess = static_cast<float>(Common::ApproximateHessianWithGaussian(score[i], label_[i], gpair[i].grad, eta_, weights_[i]));
         }
       }
     }
@@ -250,21 +247,20 @@ public:
     weights_ = metadata.weights();
   }
 
-  void GetGradients(const double* score, float* gradients,
-                    float* hessians) const override {
+  void GetGradients(const double* score, GradHessPair* gpair) const override {
     if (weights_ == nullptr) {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
         const double x = score[i] - label_[i];
-        gradients[i] = static_cast<float>(c_ * x / (std::fabs(x) + c_));
-        hessians[i] = static_cast<float>(c_ * c_ / ((std::fabs(x) + c_) * (std::fabs(x) + c_)));
+        gpair[i].grad = static_cast<float>(c_ * x / (std::fabs(x) + c_));
+        gpair[i].hess = static_cast<float>(c_ * c_ / ((std::fabs(x) + c_) * (std::fabs(x) + c_)));
       }
     } else {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
         const double x = score[i] - label_[i];
-        gradients[i] = static_cast<float>(c_ * x / (std::fabs(x) + c_) * weights_[i]);
-        hessians[i] = static_cast<float>(c_ * c_ / ((std::fabs(x) + c_) * (std::fabs(x) + c_)) * weights_[i]);
+        gpair[i].grad = static_cast<float>(c_ * x / (std::fabs(x) + c_) * weights_[i]);
+        gpair[i].hess = static_cast<float>(c_ * c_ / ((std::fabs(x) + c_) * (std::fabs(x) + c_)) * weights_[i]);
       }
     }
   }
@@ -314,19 +310,18 @@ public:
     weights_ = metadata.weights();
   }
 
-  void GetGradients(const double* score, float* gradients,
-                    float* hessians) const override {
+  void GetGradients(const double* score, GradHessPair* gpair) const override {
     if (weights_ == nullptr) {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
-        gradients[i] = static_cast<float>(score[i] - label_[i]);
-        hessians[i] = static_cast<float>(score[i] + max_delta_step_);
+        gpair[i].grad = static_cast<float>(score[i] - label_[i]);
+        gpair[i].hess = static_cast<float>(score[i] + max_delta_step_);
       }
     } else {
       #pragma omp parallel for schedule(static)
       for (data_size_t i = 0; i < num_data_; ++i) {
-        gradients[i] = static_cast<float>((score[i] - label_[i]) * weights_[i]);
-        hessians[i] = static_cast<float>((score[i] + max_delta_step_) * weights_[i]);
+        gpair[i].grad = static_cast<float>((score[i] - label_[i]) * weights_[i]);
+        gpair[i].hess = static_cast<float>((score[i] + max_delta_step_) * weights_[i]);
       }
     }
   }

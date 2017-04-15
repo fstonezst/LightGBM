@@ -121,6 +121,12 @@ private:
   aligned_allocator& operator=(const aligned_allocator&) = delete;
 };
 
+struct GradHessPair {
+public:
+  float grad = 0.0f;
+  float hess = 0.0f;
+};
+
 }  // namespace LightGBM
 
 #endif   // LightGBM_META_H_

@@ -146,12 +146,12 @@ bool VotingParallelTreeLearner<TREELEARNER_T>::BeforeFindBestSplit(const Tree* t
       return true;
     } else if (num_data_in_left_child < num_data_in_right_child) {
       // get local sumup
-      this->smaller_leaf_splits_->Init(left_leaf, this->data_partition_.get(), this->gradients_, this->hessians_);
-      this->larger_leaf_splits_->Init(right_leaf, this->data_partition_.get(), this->gradients_, this->hessians_);
+      this->smaller_leaf_splits_->Init(left_leaf, this->data_partition_.get(), this->gradients_);
+      this->larger_leaf_splits_->Init(right_leaf, this->data_partition_.get(), this->gradients_);
     } else {
       // get local sumup
-      this->smaller_leaf_splits_->Init(right_leaf, this->data_partition_.get(), this->gradients_, this->hessians_);
-      this->larger_leaf_splits_->Init(left_leaf, this->data_partition_.get(), this->gradients_, this->hessians_);
+      this->smaller_leaf_splits_->Init(right_leaf, this->data_partition_.get(), this->gradients_);
+      this->larger_leaf_splits_->Init(left_leaf, this->data_partition_.get(), this->gradients_);
     }
     return true;
   } else {

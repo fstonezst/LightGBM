@@ -220,24 +220,11 @@ public:
   *        Note: Unlike Bin, OrderedBin doesn't use ordered gradients and ordered hessians.
   *        Because it is hard to know the relative index in one leaf for sparse bin, since we skipped zero bins.
   * \param leaf Using which leaf's data to construct
-  * \param gradients Gradients, Note:non-oredered by leaf
-  * \param hessians Hessians, Note:non-oredered by leaf
+  * \param grad 
   * \param num_bin The number of bins
   * \param out Output Result
   */
-  virtual void ConstructHistogram(int leaf, const float* gradients,
-    const float* hessians, int num_bin, HistogramBinEntry* out) const = 0;
-
-  /*!
-  * \brief Construct histogram by using this bin
-  *        Note: Unlike Bin, OrderedBin doesn't use ordered gradients and ordered hessians.
-  *        Because it is hard to know the relative index in one leaf for sparse bin, since we skipped zero bins.
-  * \param leaf Using which leaf's data to construct
-  * \param gradients Gradients, Note:non-oredered by leaf
-  * \param num_bin The number of bins
-  * \param out Output Result
-  */
-  virtual void ConstructHistogram(int leaf, const float* gradients, int num_bin, HistogramBinEntry* out) const = 0;
+  virtual void ConstructHistogram(int leaf, const GradHessPair* gpair, int num_bin, HistogramBinEntry* out) const = 0;
 
   /*!
   * \brief Split current bin, and perform re-order by leaf
@@ -332,33 +319,13 @@ public:
   * \param num_bin The number of bins
   * \param out Output Result
   */
-  virtual void ConstructHistogram(
-    const data_size_t* data_indices, data_size_t num_data,
-    const float* ordered_gradients, const float* ordered_hessians, int num_bin,
-    HistogramBinEntry* out) const = 0;
-
-  virtual void ConstructHistogram(data_size_t num_data,
-    const float* ordered_gradients, const float* ordered_hessians, int num_bin,
-    HistogramBinEntry* out) const = 0;
-
-  /*!
-  * \brief Construct histogram of this feature,
-  *        Note: We use ordered_gradients and ordered_hessians to improve cache hit chance
-  *        The naive solution is using gradients[data_indices[i]] for data_indices[i] to get gradients,
-  which is not cache friendly, since the access of memory is not continuous.
-  *        ordered_gradients and ordered_hessians are preprocessed, and they are re-ordered by data_indices.
-  *        Ordered_gradients[i] is aligned with data_indices[i]'s gradients (same for ordered_hessians).
-  * \param data_indices Used data indices in current leaf
-  * \param num_data Number of used data
-  * \param ordered_gradients Pointer to gradients, the data_indices[i]-th data's gradient is ordered_gradients[i]
-  * \param num_bin The number of bins
-  * \param out Output Result
-  */
   virtual void ConstructHistogram(const data_size_t* data_indices, data_size_t num_data,
-                                  const float* ordered_gradients, int num_bin, HistogramBinEntry* out) const = 0;
+                                  const GradHessPair* gpair, int num_bin,
+                                  HistogramBinEntry* out) const = 0;
 
   virtual void ConstructHistogram(data_size_t num_data,
-                                  const float* ordered_gradients, int num_bin, HistogramBinEntry* out) const = 0;
+                                  const GradHessPair* gpair, int num_bin,
+                                  HistogramBinEntry* out) const = 0;
 
   /*!
   * \brief Split data according to threshold, if bin <= threshold, will put into left(lte_indices), else put into right(gt_indices)
@@ -442,6 +409,46 @@ inline uint32_t BinMapper::ValueToBin(double value) const {
       return num_bin_ - 1;
     }
   }
+}
+
+#define AddPairPtrToHistogram(data, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7, \
+gptr) { \
+data[bin0].sum_gradients += (gptr + 0)->grad;\
+data[bin0].sum_hessians += (gptr + 0)->hess;\
+data[bin1].sum_gradients += (gptr + 1)->grad;\
+data[bin1].sum_hessians += (gptr + 1)->hess;\
+data[bin2].sum_gradients += (gptr + 2)->grad;\
+data[bin2].sum_hessians += (gptr + 2)->hess;\
+data[bin3].sum_gradients += (gptr + 3)->grad;\
+data[bin3].sum_hessians += (gptr + 3)->hess;\
+data[bin4].sum_gradients += (gptr + 4)->grad;\
+data[bin4].sum_hessians += (gptr + 4)->hess;\
+data[bin5].sum_gradients += (gptr + 5)->grad;\
+data[bin5].sum_hessians += (gptr + 5)->hess;\
+data[bin6].sum_gradients += (gptr + 6)->grad;\
+data[bin6].sum_hessians += (gptr + 6)->hess;\
+data[bin7].sum_gradients += (gptr + 7)->grad;\
+data[bin7].sum_hessians += (gptr + 7)->hess;\
+}
+
+#define AddPairToHistogram(data, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7, \
+g0, g1, g2, g3, g4, g5, g6, g7) { \
+data[bin0].sum_gradients += (g0).grad;\
+data[bin0].sum_hessians += (g0).hess;\
+data[bin1].sum_gradients += (g1).grad;\
+data[bin1].sum_hessians += (g1).hess;\
+data[bin2].sum_gradients += (g2).grad;\
+data[bin2].sum_hessians += (g2).hess;\
+data[bin3].sum_gradients += (g3).grad;\
+data[bin3].sum_hessians += (g3).hess;\
+data[bin4].sum_gradients += (g4).grad;\
+data[bin4].sum_hessians += (g4).hess;\
+data[bin5].sum_gradients += (g5).grad;\
+data[bin5].sum_hessians += (g5).hess;\
+data[bin6].sum_gradients += (g6).grad;\
+data[bin6].sum_hessians += (g6).hess;\
+data[bin7].sum_gradients += (g7).grad;\
+data[bin7].sum_hessians += (g7).hess;\
 }
 
 #define AddGradientPtrToHistogram(data, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7, \

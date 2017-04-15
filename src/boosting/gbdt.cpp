@@ -117,8 +117,7 @@ void GBDT::ResetTrainingData(const BoostingConfig* config, const Dataset* train_
     num_gradients_per_class_ = (num_data_ + 7) / 8 * 8;
     // create buffer for gradients and hessians
     size_t total_gradient_size = static_cast<size_t>(num_gradients_per_class_) * num_tree_per_iteration_;
-    gradients_.resize(total_gradient_size);
-    hessians_.resize(total_gradient_size);
+    gpair_.resize(total_gradient_size);
     // get max feature index
     max_feature_idx_ = train_data->num_total_features() - 1;
     // get label index
@@ -367,8 +366,8 @@ bool GBDT::TrainOneIter(const float* gradient, const float* hessian, bool is_eva
       const int bias2 = k * num_data_;
       #pragma omp parallel for schedule(static)
       for (int i = 0; i < num_gradients_per_class_; ++i) {
-        gradients_[bias1 + i] = gradient[bias2 + i];
-        hessians_[bias1 + i] = hessian[bias2 + i];
+        gpair_[bias1 + i].grad = gradient[bias2 + i];
+        gpair_[bias1 + i].hess = hessian[bias2 + i];
       }
     }
   }
@@ -389,8 +388,7 @@ bool GBDT::TrainOneIter(const float* gradient, const float* hessian, bool is_eva
       size_t bias = static_cast<size_t>(cur_tree_id)* num_gradients_per_class_;
       // cannot multi-threading here.
       for (int i = 0; i < bag_data_cnt_; ++i) {
-        gradients_[bias + i] = gradients_[bias + bag_data_indices_[i]];
-        hessians_[bias + i] = hessians_[bias + bag_data_indices_[i]];
+        gpair_[bias + i] = gpair_[bias + bag_data_indices_[i]];
       }
     }
     #ifdef TIMETAG
@@ -406,8 +404,7 @@ bool GBDT::TrainOneIter(const float* gradient, const float* hessian, bool is_eva
     size_t gbias = static_cast<size_t>(cur_tree_id) * num_gradients_per_class_;
     if (class_need_train_[cur_tree_id]) {
       new_tree.reset(
-        tree_learner_->Train(gradients_.data() + gbias,
-                             hessians_.data() + gbias, is_constant_hessian_));
+        tree_learner_->Train(gpair_.data() + gbias, is_constant_hessian_));
     }
     #ifdef TIMETAG
     tree_time += std::chrono::steady_clock::now() - start_time;
@@ -653,7 +650,7 @@ void GBDT::Boosting() {
   // objective function will calculate gradients and hessians
   int64_t num_score = 0;
   objective_function_->
-    GetGradients(GetTrainingScore(&num_score), gradients_.data(), hessians_.data());
+    GetGradients(GetTrainingScore(&num_score), gpair_.data());
 }
 
 std::string GBDT::DumpModel(int num_iteration) const {

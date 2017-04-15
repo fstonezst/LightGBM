@@ -44,7 +44,7 @@ public:
   * \param gradients
   * \param hessians
   */
-  void Init(const float* gradients, const float* hessians) {
+  void Init(const GradHessPair* gpair) {
     num_data_in_leaf_ = num_data_;
     leaf_index_ = 0;
     data_indices_ = nullptr;
@@ -52,8 +52,8 @@ public:
     double tmp_sum_hessians = 0.0f;
 #pragma omp parallel for schedule(static) reduction(+:tmp_sum_gradients, tmp_sum_hessians)
     for (data_size_t i = 0; i < num_data_in_leaf_; ++i) {
-      tmp_sum_gradients += gradients[i];
-      tmp_sum_hessians += hessians[i];
+      tmp_sum_gradients += gpair[i].grad;
+      tmp_sum_hessians += gpair[i].hess;
     }
     sum_gradients_ = tmp_sum_gradients;
     sum_hessians_ = tmp_sum_hessians;
@@ -66,7 +66,7 @@ public:
   * \param gradients
   * \param hessians
   */
-  void Init(int leaf, const DataPartition* data_partition, const float* gradients, const float* hessians) {
+  void Init(int leaf, const DataPartition* data_partition, const GradHessPair* gpair) {
     leaf_index_ = leaf;
     data_indices_ = data_partition->GetIndexOnLeaf(leaf, &num_data_in_leaf_);
     double tmp_sum_gradients = 0.0f;
@@ -74,8 +74,8 @@ public:
 #pragma omp parallel for schedule(static) reduction(+:tmp_sum_gradients, tmp_sum_hessians)
     for (data_size_t i = 0; i < num_data_in_leaf_; ++i) {
       data_size_t idx = data_indices_[i];
-      tmp_sum_gradients += gradients[idx];
-      tmp_sum_hessians += hessians[idx];
+      tmp_sum_gradients += gpair[idx].grad;
+      tmp_sum_hessians += gpair[idx].hess;
     }
     sum_gradients_ = tmp_sum_gradients;
     sum_hessians_ = tmp_sum_hessians;

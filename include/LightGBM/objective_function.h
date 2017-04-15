@@ -25,11 +25,9 @@ public:
   /*!
   * \brief calculating first order derivative of loss function
   * \param score prediction score in this round
-  * \gradients Output gradients
-  * \hessians Output hessians
+  * \param grad Output gradients hessians
   */
-  virtual void GetGradients(const double* score,
-    float* gradients, float* hessians) const = 0;
+  virtual void GetGradients(const double* score, GradHessPair* gpair) const = 0;
 
   virtual const char* GetName() const = 0;
 
