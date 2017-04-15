@@ -27,6 +27,7 @@ public:
   float sum_hessians = 0.0f;
   /*! \brief Number of data on this bin */
   data_size_t cnt = 0;
+  data_size_t pad = 0;
   /*!
   * \brief Sum up (reducers) functions for histogram bin
   */
