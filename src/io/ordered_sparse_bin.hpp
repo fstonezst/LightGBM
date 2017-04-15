@@ -88,6 +88,7 @@ public:
     data_size_t i = start;
     for (; i < end - group_rest;) {
       std::vector<TmpGradHessPair> tmp_sumup_buf(num_bin);
+      std::vector<data_size_t> tmp_cnts(num_bin, 0);
       for (data_size_t j = 0; j < KNumSumupGroup; j += 8, i += 8) {
         const VAL_T bin0 = ordered_pair_[i].bin;
         const VAL_T bin1 = ordered_pair_[i + 1].bin;
@@ -115,15 +116,16 @@ public:
         const auto g7 = gradient[ordered_pair_[i + 7].ridx];
         const auto h7 = hessian[ordered_pair_[i + 7].ridx];
 
-        AddGradientToHistogram(tmp_sumup_buf.data(), bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
+        AddGradientToHistogram(tmp_sumup_buf, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
                                g0, g1, g2, g3, g4, g5, g6, g7);
-        AddHessianToHistogram(tmp_sumup_buf.data(), bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
+        AddHessianToHistogram(tmp_sumup_buf, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
                               h0, h1, h2, h3, h4, h5, h6, h7);
-        AddCountToHistogram(out, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
+        AddCountToArray(tmp_cnts, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
       }
       for (int j = 0; j < num_bin; ++j) {
         out[j].sum_gradients += tmp_sumup_buf[j].sum_gradients;
         out[j].sum_hessians += tmp_sumup_buf[j].sum_hessians;
+        out[j].cnt += tmp_cnts[j];
       }
     }
     // use data on current leaf to construct histogram
@@ -204,9 +206,9 @@ public:
         const auto g6 = gradient[ordered_pair_[i + 6].ridx];
         const auto g7 = gradient[ordered_pair_[i + 7].ridx];
 
-        AddGradientToHistogram(tmp_sumup_buf.data(), bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
+        AddGradientToHistogram(tmp_sumup_buf, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7,
                                g0, g1, g2, g3, g4, g5, g6, g7);
-        AddCountToHistogram(tmp_sumup_buf.data(), bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
+        AddCountToHistogram(tmp_sumup_buf, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7);
       }
       for (int j = 0; j < num_bin; ++j) {
         out[j].sum_gradients += tmp_sumup_buf[j].sum_gradients;

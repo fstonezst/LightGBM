@@ -502,6 +502,17 @@ data[bin7].sum_hessians += (h7);\
 ++data[bin7].cnt;\
 }
 
+#define AddCountToArray(data, bin0, bin1, bin2, bin3, bin4, bin5, bin6, bin7) { \
+++data[bin0];\
+++data[bin1];\
+++data[bin2];\
+++data[bin3];\
+++data[bin4];\
+++data[bin5];\
+++data[bin6];\
+++data[bin7];\
+}
+
 struct TmpGradCntPair {
 public:
   float sum_gradients = 0.0f;
