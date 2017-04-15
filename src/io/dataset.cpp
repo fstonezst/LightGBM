@@ -457,7 +457,7 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
         } else {
           // used ordered bin
           ordered_bins[group]->ConstructHistogram(leaf_idx,
-                                                  ptr_ordered_grad,
+                                                  gpair,
                                                   num_bin,
                                                   data_ptr);
         }
@@ -494,7 +494,7 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
         } else {
           // used ordered bin
           ordered_bins[group]->ConstructHistogram(leaf_idx,
-                                                  ptr_ordered_grad,
+                                                  gpair,
                                                   num_bin,
                                                   data_ptr);
         }
