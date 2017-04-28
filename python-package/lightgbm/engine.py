@@ -360,6 +360,8 @@ def cv(params, train_set, num_boost_round=10,
 
     if metrics:
         params.setdefault('metric', [])
+        if isinstance(params['metric'],string_type):
+            params['metric'] = [params['metric']]
         if isinstance(metrics, string_type):
             params['metric'].append(metrics)
         else:
